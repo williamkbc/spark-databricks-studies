@@ -54,7 +54,7 @@
 | PR | Tema | Status |
 |----|------|--------|
 | PR-20 | Spark + PostgreSQL (JDBC) | ✅ Praticado |
-| PR-21 | Spark + Object Storage (S3/MinIO) | 📖 Só markdown (precisa MinIO) |
+| PR-21 | Spark + Object Storage (S3/MinIO) | ✅ Praticado |
 | PR-22 | Design Patterns (Singleton, Strategy, Factory) | ⚠️ Só markdown - PRATICAR |
 | PR-23 | Pipeline End-to-End com testes | ⚠️ Só markdown - PRATICAR |
 | PR-24 | Migração Pandas → Pandas API | ⚠️ Só markdown - PRATICAR |
