@@ -85,6 +85,18 @@
 - **Q: Difference between Strategy and Template Method?**
   A: Template Method defines the skeleton (run = extract→transform→load), Strategy defines interchangeable implementations of each step.
 
+### PR-31: Spark SQL Deep Dive
+- **Q: What's the difference between ROLLUP and CUBE?**
+  A: ROLLUP generates hierarchical subtotals (cuisine+city → cuisine → grand total). CUBE generates every possible combination (cuisine+city, cuisine only, city only, grand total). Use ROLLUP for hierarchical reports, CUBE for pivot-table-style slicing.
+- **Q: What is GROUPING() used for?**
+  A: Returns 1 if the column is a subtotal row (NULL meaning "all values"), 0 if it has a real value. Combine with COALESCE to label subtotal rows clearly.
+- **Q: How do you force a join strategy in Spark SQL without Python?**
+  A: SQL hints — `/*+ BROADCAST(table) */` forces BroadcastHashJoin, `/*+ MERGE(table) */` forces SortMergeJoin.
+- **Q: Why prefer window functions over correlated subqueries?**
+  A: Correlated subquery runs once per row (O(N)). Window function does a single pass — Catalyst optimizes it. Always use `AVG() OVER (PARTITION BY ...)` instead of a subquery.
+- **Q: What happens if you use a window function without PARTITION BY?**
+  A: All data goes to a single partition. On large tables this causes OOM. Always partition window functions appropriately.
+
 ### PR-29: 5 S's Optimization
 - **Q: Your Spark job is slow. How do you diagnose it?**
   A: Use the 5 S's framework — Shuffle (reduce data movement, broadcast small tables), Skew (salting for hot keys), Spill (tune memory/persist), Storage (Parquet+Snappy, coalesce vs repartition), Serialization (built-ins over Python UDFs).
@@ -268,7 +280,7 @@ See `docs/PROGRESSO.md` for full status.
 | PR-26 | Error Handling & Retry | `src/pr26_error_handling.py` | custom exceptions, decorators, fail-fast, backoff |
 
 ### Next priorities (updated from research)
-1. **PR-31** — CUBE, ROLLUP, join strategies, CACHE TABLE (VPS)
+1. ~~**PR-31**~~ ✅ Done
 2. **PR-28** — Modular SQL with chained CTEs (VPS)
 3. **PR-23** — End-to-End pipeline with tests — pytest + local SparkSession (VPS)
 4. **Módulo 3 — Databricks Free Edition**:

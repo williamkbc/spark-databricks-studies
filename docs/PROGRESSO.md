@@ -68,7 +68,7 @@
 | PR-28 | SQL End-to-End modular (.sql files) | ⚠️ Só markdown - PRATICAR |
 | PR-29 | PySpark: 5 S's, Broadcast, Salting, Pitfalls | ✅ Praticado |
 | PR-30 | Pandas API Deep Dive | ⚠️ Só markdown - PRATICAR |
-| PR-31 | Spark SQL Deep Dive: Joins, CUBE, ROLLUP | ⚠️ Só markdown - PRATICAR |
+| PR-31 | Spark SQL Deep Dive: Joins, CUBE, ROLLUP | ✅ Praticado |
 
 ---
 
