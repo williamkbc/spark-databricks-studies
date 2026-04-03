@@ -63,7 +63,7 @@
 | PR | Tema | Status |
 |----|------|--------|
 | PR-25 | Spark SQL como ferramenta principal | ⚠️ Só markdown - PRATICAR |
-| PR-26 | Pipeline com Error Handling e Retry | ⚠️ Só markdown - PRATICAR |
+| PR-26 | Pipeline com Error Handling e Retry | ✅ Praticado |
 | PR-27 | Pipeline Pandas API otimizado | ⚠️ Só markdown - PRATICAR |
 | PR-28 | SQL End-to-End modular (.sql files) | ⚠️ Só markdown - PRATICAR |
 | PR-29 | PySpark: 5 S's, Broadcast, Salting, Pitfalls | ⚠️ Só markdown - PRATICAR |
