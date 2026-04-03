@@ -133,25 +133,29 @@ After running each exercise, ask yourself:
 
 ---
 
-## Databricks Community Edition
+## Databricks Free Edition (⚠️ Community Edition retired Jan 1, 2026)
 
-- **Access**: community.cloud.databricks.com (free, single-node cluster)
-- **Limitations vs production Databricks**:
-  - Single node only (no multi-worker clusters)
-  - No Delta Live Tables, MLflow, Unity Catalog
-  - Cluster auto-terminates after 2h inactivity
+- **Access**: accounts.azuredatabricks.net or databricks.com/free (Free Edition — replaced Community Edition)
+- **What's NEW vs old Community Edition** (major upgrade):
+  - Delta Live Tables (DLT) — declarative pipelines with data quality expectations
+  - Unity Catalog — full governance, three-level namespace (catalog.schema.table)
+  - Databricks Workflows — job scheduling and orchestration
+  - Auto Loader — incremental file ingestion (`cloudFiles` source)
+  - MLflow — experiment tracking, model registry
+  - Serverless compute (no cluster config needed)
+- **Hard limits**:
+  - Single-node only (no multi-worker clusters — can't observe true shuffle/skew behavior)
+  - 1 SQL warehouse at `2X-Small` size
+  - 500 table limit, no commercial use
   - No JDBC to external DBs (networking restricted)
-- **What CAN be practiced**:
-  - Delta Lake (ACID transactions, time travel, MERGE)
-  - Databricks notebooks + magic commands (`%sql`, `%md`, `%sh`)
-  - DBFS (Databricks File System) as storage
-  - Spark SQL in notebooks
-  - Basic MLlib
-- **Key differences from local Spark to know for interviews**:
-  - `dbutils.fs` instead of HDFS commands
-  - `spark.table()` reads from Hive metastore
-  - Delta format is the default (not Parquet)
-  - `display()` instead of `.show()` for rich output
+- **Use VPS for**: performance tuning (broadcast joins, skew, AQE) — single node can't show distributed behavior
+- **Use Free Edition for**: Delta Lake, DLT, Unity Catalog, Auto Loader, notebooks, Workflows
+- **Key differences from local Spark**:
+  - `dbutils.fs` for file operations instead of shell commands
+  - `display()` instead of `.show()` for rich notebook output
+  - Delta is the default format (not Parquet)
+  - `spark.table("catalog.schema.table")` for Unity Catalog tables
+  - `%sql`, `%python`, `%sh`, `%md` magic commands in notebooks
 
 ---
 
@@ -263,8 +267,27 @@ See `docs/PROGRESSO.md` for full status.
 | PR-22 | Design Patterns | `src/pr22_design_patterns.py` | Singleton, Strategy, Factory, Template Method |
 | PR-26 | Error Handling & Retry | `src/pr26_error_handling.py` | custom exceptions, decorators, fail-fast, backoff |
 
-### Next priorities
-1. **PR-31** — CUBE, ROLLUP, join strategies, CACHE TABLE
-2. **PR-28** — Modular SQL with chained CTEs
-3. **PR-23** — Pipeline End-to-End with tests
-4. **Módulo 3** — Databricks Community Edition (Delta Lake, notebooks, DBFS)
+### Next priorities (updated from research)
+1. **PR-31** — CUBE, ROLLUP, join strategies, CACHE TABLE (VPS)
+2. **PR-28** — Modular SQL with chained CTEs (VPS)
+3. **PR-23** — End-to-End pipeline with tests — pytest + local SparkSession (VPS)
+4. **Módulo 3 — Databricks Free Edition**:
+   - Delta Lake deep dive (transaction log, MERGE, OPTIMIZE, Z-ORDER, schema evolution)
+   - Auto Loader + incremental ingestion
+   - Delta Live Tables (DLT) with expectations
+   - Unity Catalog basics
+   - Workflows for job orchestration
+
+### Critical concepts to reinforce (research-identified gaps)
+- **Narrow vs Wide transformations** — filter/select = no shuffle; groupBy/join/distinct = shuffle + stage boundary
+- **explain() fluency** — read bottom-up, spot Exchange (shuffle), BroadcastHashJoin vs SortMergeJoin
+- **Window functions always need PARTITION BY** — no PARTITION BY = all data in 1 partition = OOM
+- **Small file problem** — many tiny files = slow reads; use OPTIMIZE in Delta, coalesce() before write
+- **AQE (Adaptive Query Execution)** — enabled by default since Spark 3.2; auto-converts SMJ→BHJ, coalesces partitions, handles skew
+- **Cache only large DataFrames reused multiple times** — proven in PR-29: cache can be slower on small data
+
+### What NOT to waste time on
+- RDD API in depth (DataFrames are better; understand RDDs conceptually only)
+- Hadoop/HDFS deep dive (cloud storage replaced it)
+- Legacy DStream Streaming API (use Structured Streaming only)
+- Memorizing all Spark configs (know the 10-15 most impactful ones)
