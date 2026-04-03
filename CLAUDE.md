@@ -11,6 +11,27 @@
 
 ---
 
+## Teaching Rule: When a Real Error Happens → Teach It Deeply
+
+**Every time a real error occurs during practice, do all 3 of these:**
+
+1. **Fix it** — show the correct code immediately
+2. **Teach it** — explain WHY it happened (root cause, not just symptom)
+3. **Generalize it** — show the full pattern: what never to do, what to do instead, real production examples, the decision framework
+
+**Then save it** to CLAUDE.md under the appropriate section:
+- If it's a gotcha/environment issue → add to "Lessons Learned" table
+- If it's a concept/pattern mistake → add to "Critical concepts to reinforce"
+- If it's interview-relevant → add to "Interview Cheat Sheet"
+
+**Examples of errors that happened and were taught deeply:**
+- `postgresql-9.4` SCRAM-SHA-256 auth failure → JDBC driver versioning lesson
+- S3A credentials not reaching executor → Spark config propagation lesson
+- Cache slower than recompute on small data → when NOT to cache lesson
+- `FloatType == 3.8` returns 0 rows → IEEE 754 float precision lesson (never use exact equality on floats; use DecimalType for money; use range/tolerance in tests)
+
+---
+
 ## How to Teach Will
 
 **Be a professor, not a rubber duck.** Will learns best when you:
@@ -257,6 +278,8 @@ docker cp /tmp/script.py spark-master:/opt/spark/jobs/script.py
 | `owshq-spark:3.5` exits immediately | Bitnami image, wrong entrypoint for compose | Use `apache/spark:3.5.1` with explicit spark-class command |
 | `docker-compose` not found | v2 installed as plugin | Use `docker compose` (no hyphen) |
 | Script not found in container | Wrote to host `/tmp`, not copied to container | Always `docker cp` before spark-submit |
+| `pip install` blocked on VPS | Ubuntu 25.10 externally-managed environment | Use `python3 -m venv /tmp/venv && venv/bin/pip install` |
+| Float `== 3.8` filter returns 0 rows | FloatType stores 3.8 as 3.799999... (IEEE 754) | Never use exact `==` on floats — use `<`, `>`, `BETWEEN`, or cast to Decimal |
 
 ---
 
@@ -297,6 +320,9 @@ See `docs/PROGRESSO.md` for full status.
 - **Small file problem** — many tiny files = slow reads; use OPTIMIZE in Delta, coalesce() before write
 - **AQE (Adaptive Query Execution)** — enabled by default since Spark 3.2; auto-converts SMJ→BHJ, coalesces partitions, handles skew
 - **Cache only large DataFrames reused multiple times** — proven in PR-29: cache can be slower on small data
+- **Never filter on exact float equality** — `FloatType` stores 3.8 as 3.7999... (IEEE 754); use `< 4.0` instead of `== 3.8`; use `DecimalType` when precision matters
+- **pytest on VPS needs a virtualenv** — Ubuntu 25.10 blocks system pip; use `python3 -m venv venv && venv/bin/pip install pytest pyspark`
+- **Test fixture scope="session"** — share one SparkSession across all tests; `getOrCreate()` prevents duplicates; always `yield` then `stop()` in teardown
 
 ### What NOT to waste time on
 - RDD API in depth (DataFrames are better; understand RDDs conceptually only)
