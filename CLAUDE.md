@@ -85,6 +85,18 @@
 - **Q: Difference between Strategy and Template Method?**
   A: Template Method defines the skeleton (run = extract→transform→load), Strategy defines interchangeable implementations of each step.
 
+### PR-29: 5 S's Optimization
+- **Q: Your Spark job is slow. How do you diagnose it?**
+  A: Use the 5 S's framework — Shuffle (reduce data movement, broadcast small tables), Skew (salting for hot keys), Spill (tune memory/persist), Storage (Parquet+Snappy, coalesce vs repartition), Serialization (built-ins over Python UDFs).
+- **Q: When do you use Broadcast Join vs Sort-Merge Join?**
+  A: Broadcast when one side is small (<10MB by default, tunable). SMJ when both sides are large. Broadcast eliminates shuffle entirely — confirmed via `BroadcastHashJoin` in `explain()`.
+- **Q: What is data skew and how do you fix it?**
+  A: One partition gets disproportionate data (e.g. 80% of orders on one restaurant). Fix: salting — add random int to key, explode small side to match, join on key+salt, then drop salt. Spreads hot key evenly.
+- **Q: Should you always cache DataFrames?**
+  A: No — cache only pays off for large DataFrames used multiple times. On small data (proven in this run) cache overhead > recompute cost. Profile first.
+- **Q: coalesce vs repartition?**
+  A: `coalesce()` reduces partitions with no shuffle (use before saving). `repartition()` changes count with full shuffle (use before joins to redistribute evenly).
+
 ### PR-26: Error Handling
 - **Q: Why custom exceptions instead of catching Exception everywhere?**
   A: `DataQualityError` → alert data team. `ProcessingError` → retry or page on-call. Generic `Exception` loses that context.
@@ -252,8 +264,7 @@ See `docs/PROGRESSO.md` for full status.
 | PR-26 | Error Handling & Retry | `src/pr26_error_handling.py` | custom exceptions, decorators, fail-fast, backoff |
 
 ### Next priorities
-1. **PR-29** — 5 S's of optimization, Broadcast vs Sort-Merge joins *(most interview-critical)*
-2. **PR-31** — CUBE, ROLLUP, join strategies, CACHE TABLE
-3. **PR-28** — Modular SQL with chained CTEs
-4. **PR-23** — Pipeline End-to-End with tests
-5. **Módulo 3** — Databricks Community Edition (Delta Lake, notebooks, DBFS)
+1. **PR-31** — CUBE, ROLLUP, join strategies, CACHE TABLE
+2. **PR-28** — Modular SQL with chained CTEs
+3. **PR-23** — Pipeline End-to-End with tests
+4. **Módulo 3** — Databricks Community Edition (Delta Lake, notebooks, DBFS)
