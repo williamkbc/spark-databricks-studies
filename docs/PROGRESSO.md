@@ -62,7 +62,7 @@
 ### Bloco 5: Consolidação e Deep Dive
 | PR | Tema | Status |
 |----|------|--------|
-| PR-25 | Spark SQL como ferramenta principal | ⚠️ Só markdown - PRATICAR |
+| PR-25 | Spark SQL como ferramenta principal | ✅ Praticado |
 | PR-26 | Pipeline com Error Handling e Retry | ✅ Praticado |
 | PR-27 | Pipeline Pandas API otimizado | ⚠️ Só markdown - PRATICAR |
 | PR-28 | SQL End-to-End modular (.sql files) | ✅ Praticado |
