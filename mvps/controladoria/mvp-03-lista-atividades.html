@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de Atividades — Controladoria</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --white: #fff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --blue: #1d4ed8;
+    --ativo: #0ea5e9;
+    --passivo: #a855f7;
+    --middle: #f59e0b;
+    --green: #22c55e;
+    --red: #ef4444;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+    height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg,#1e40af,#3b82f6); border-radius: 8px; display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .btn { padding: 7px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: #1d4ed8; color: #fff; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-outline { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-outline:hover { background: #f8fafc; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#1e40af,#6366f1); color:#fff; display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700; }
+
+  /* LAYOUT */
+  .layout { display: flex; height: calc(100vh - 60px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; flex-shrink: 0; background: var(--white);
+    border-right: 1px solid var(--border); overflow-y: auto; padding: 16px 0;
+  }
+  .sidebar-section { margin-bottom: 8px; }
+  .sidebar-label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; padding: 4px 16px 8px; }
+  .sidebar-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--text);
+    transition: background .1s; border-radius: 0;
+  }
+  .sidebar-item:hover { background: #f8fafc; }
+  .sidebar-item.active { background: #eff6ff; color: var(--blue); font-weight: 600; }
+  .sidebar-item-left { display: flex; align-items: center; gap: 8px; }
+  .sidebar-count { background: var(--bg); color: var(--muted); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+  .sidebar-count.red { background: #fee2e2; color: #dc2626; }
+  .sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* MAIN CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* FILTERS BAR */
+  .filters-bar {
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-group label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+  select, input[type="text"] {
+    padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 7px;
+    font-size: 12px; outline: none; background: var(--white); color: var(--text); cursor: pointer;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--blue); }
+  .search-input { width: 200px; }
+  .filter-actions { margin-left: auto; display: flex; gap: 8px; }
+  .view-toggle { display: flex; border: 1.5px solid var(--border); border-radius: 7px; overflow: hidden; }
+  .view-btn { padding: 5px 10px; font-size: 13px; cursor: pointer; border: none; background: var(--white); transition: background .1s; }
+  .view-btn.active { background: #eff6ff; color: var(--blue); }
+
+  /* TABLE */
+  .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+  .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .table-title { font-size: 13px; font-weight: 700; }
+  .table-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px;
+    border-bottom: 1.5px solid var(--border); background: #f8fafc; white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  thead th:hover { background: #f1f5f9; }
+  .sort-icon { margin-left: 4px; opacity: .5; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; cursor: pointer; }
+  tbody td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
+
+  /* PILLS */
+  .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .s-todo { background: #f1f5f9; color: #64748b; }
+  .s-prog { background: #dbeafe; color: #1d4ed8; }
+  .s-rev { background: #fef3c7; color: #b45309; }
+  .s-done { background: #dcfce7; color: #16a34a; }
+  .s-block { background: #fee2e2; color: #dc2626; }
+  .team-pill { padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+  .tb-ativo { background: #e0f2fe; color: #0369a1; }
+  .tb-passivo { background: #f3e8ff; color: #7e22ce; }
+  .tb-middle { background: #fef3c7; color: #b45309; }
+  .pri-pill { padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .pri-alta { background: #fee2e2; color: #dc2626; }
+  .pri-media { background: #fef3c7; color: #d97706; }
+  .pri-baixa { background: #dcfce7; color: #16a34a; }
+
+  /* PROGRESS inline */
+  .prog-wrap { display: flex; align-items: center; gap: 6px; }
+  .prog-bar { width: 60px; height: 5px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; }
+  .prog-text { font-size: 11px; font-weight: 700; color: var(--muted); }
+
+  /* ASSIGNEE */
+  .assignee-cell { display: flex; align-items: center; gap: 6px; }
+  .a-avatar { width: 22px; height: 22px; border-radius: 50%; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* DUE */
+  .due-overdue { color: #dc2626; font-weight: 700; }
+  .due-today { color: #d97706; font-weight: 700; }
+  .due-ok { color: var(--muted); }
+
+  /* ACTIONS */
+  .row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .1s; }
+  tbody tr:hover .row-actions { opacity: 1; }
+  .action-btn { padding: 4px 8px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); font-size: 11px; cursor: pointer; transition: background .1s; }
+  .action-btn:hover { background: #f1f5f9; }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); }
+  .page-info { font-size: 12px; color: var(--muted); }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn { padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--white); font-size: 12px; cursor: pointer; font-weight: 600; transition: all .1s; }
+  .page-btn:hover { background: #f8fafc; }
+  .page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 14px; width: 560px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header {
+    padding: 20px 24px 0; display: flex; align-items: flex-start; justify-content: space-between;
+    border-bottom: 1px solid var(--border); padding-bottom: 16px;
+  }
+  .modal-title { font-size: 16px; font-weight: 800; }
+  .modal-subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .modal-close { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 16px; display:flex;align-items:center;justify-content:center; }
+  .modal-body { padding: 20px 24px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .form-input { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 13px; outline: none; }
+  .form-input:focus { border-color: var(--blue); }
+  textarea.form-input { resize: vertical; min-height: 80px; font-family: inherit; }
+  .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* SUMMARY STRIP */
+  .summary-strip { display: flex; gap: 10px; margin-bottom: 14px; }
+  .sum-item { flex: 1; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .sum-icon { font-size: 20px; }
+  .sum-val { font-size: 18px; font-weight: 800; }
+  .sum-lbl { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <span>Esteira Controladoria</span>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-outline" onclick="openModal()">+ Importar</button>
+    <button class="btn btn-primary" onclick="openModal()">+ Nova Atividade</button>
+    <div class="avatar" title="William Cardoso">WC</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Geral</div>
+      <div class="sidebar-item active">
+        <div class="sidebar-item-left">📋 Todas as Atividades</div>
+        <span class="sidebar-count">38</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">⭐ Minhas Atividades</div>
+        <span class="sidebar-count">8</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">⏰ Vencendo Hoje</div>
+        <span class="sidebar-count red">5</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">⛔ Bloqueadas</div>
+        <span class="sidebar-count red">3</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">✅ Concluídas</div>
+        <span class="sidebar-count">12</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Por Equipe</div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">🔵 Ativo</div>
+        <span class="sidebar-count">15</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">🟣 Passivo</div>
+        <span class="sidebar-count">13</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">🟡 Middle Office</div>
+        <span class="sidebar-count">10</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Ciclo</div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">📅 Fechamento Mai/26</div>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">📁 Abr/26</div>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">📁 Mar/26</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Relatórios</div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">📊 Dashboard</div>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">📈 Histórico SLA</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+
+    <!-- SUMMARY STRIP -->
+    <div class="summary-strip">
+      <div class="sum-item">
+        <div class="sum-icon">📋</div>
+        <div><div class="sum-val">38</div><div class="sum-lbl">Total</div></div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-icon" style="color:#3b82f6">▶</div>
+        <div><div class="sum-val" style="color:#1d4ed8">14</div><div class="sum-lbl">Andamento</div></div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-icon">👁</div>
+        <div><div class="sum-val" style="color:#d97706">6</div><div class="sum-lbl">Revisão</div></div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-icon">✅</div>
+        <div><div class="sum-val" style="color:#16a34a">12</div><div class="sum-lbl">Concluídas</div></div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-icon">⛔</div>
+        <div><div class="sum-val" style="color:#dc2626">3</div><div class="sum-lbl">Bloqueadas</div></div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-icon">🎯</div>
+        <div><div class="sum-val" style="color:#7e22ce">84%</div><div class="sum-lbl">SLA</div></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Equipe</label>
+        <select onchange="filterTable()">
+          <option value="">Todas</option>
+          <option value="Ativo">Ativo</option>
+          <option value="Passivo">Passivo</option>
+          <option value="Middle">Middle</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select onchange="filterTable()">
+          <option value="">Todos</option>
+          <option value="A Fazer">A Fazer</option>
+          <option value="Em Andamento">Em Andamento</option>
+          <option value="Em Revisão">Em Revisão</option>
+          <option value="Concluído">Concluído</option>
+          <option value="Bloqueado">Bloqueado</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Prioridade</label>
+        <select onchange="filterTable()">
+          <option value="">Todas</option>
+          <option value="Alta">Alta</option>
+          <option value="Média">Média</option>
+          <option value="Baixa">Baixa</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Responsável</label>
+        <select>
+          <option value="">Todos</option>
+          <option>Ana Lima</option>
+          <option>Carlos Rocha</option>
+          <option>Beatriz Costa</option>
+          <option>Pedro Alves</option>
+          <option>Fernanda Dias</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterTable()" id="searchInput" />
+        <div class="view-toggle">
+          <button class="view-btn active" title="Lista">☰</button>
+          <button class="view-btn" title="Grade">⊞</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Atividades — Fechamento Mai/2026</div>
+          <div class="table-sub">Mostrando 15 de 38 atividades</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" style="font-size:12px;padding:6px 12px">⬇ Exportar CSV</button>
+          <button class="btn btn-outline" style="font-size:12px;padding:6px 12px">🖨 Imprimir</button>
+        </div>
+      </div>
+      <table id="activityTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" /></th>
+            <th>Atividade <span class="sort-icon">↕</span></th>
+            <th>Equipe <span class="sort-icon">↕</span></th>
+            <th>Responsável</th>
+            <th>Status <span class="sort-icon">↕</span></th>
+            <th>Prioridade <span class="sort-icon">↕</span></th>
+            <th>Vencimento <span class="sort-icon">↕</span></th>
+            <th>Progresso</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+      <div class="pagination">
+        <div class="page-info">Página 1 de 3 — 38 atividades</div>
+        <div class="page-btns">
+          <button class="page-btn">←</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">→</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: NOVA ATIVIDADE -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Nova Atividade</div>
+        <div class="modal-subtitle">Fechamento Mai/2026</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Título da Atividade *</label>
+        <input type="text" class="form-input" placeholder="Ex: Reconciliação Conta 1.1.1.01 — Disponibilidades" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Equipe *</label>
+          <select class="form-input">
+            <option>Selecionar...</option>
+            <option>🔵 Ativo</option>
+            <option>🟣 Passivo</option>
+            <option>🟡 Middle Office</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Responsável *</label>
+          <select class="form-input">
+            <option>Selecionar...</option>
+            <option>Ana Lima</option>
+            <option>Carlos Rocha</option>
+            <option>Beatriz Costa</option>
+            <option>Pedro Alves</option>
+            <option>Fernanda Dias</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-input">
+            <option>A Fazer</option>
+            <option>Em Andamento</option>
+            <option>Em Revisão</option>
+            <option>Concluído</option>
+            <option>Bloqueado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select class="form-input">
+            <option>Alta</option>
+            <option selected>Média</option>
+            <option>Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data de Vencimento</label>
+          <input type="date" class="form-input" value="2026-05-15" />
+        </div>
+        <div class="form-group">
+          <label>Conta Contábil</label>
+          <input type="text" class="form-input" placeholder="Ex: 1.1.1.01" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Descrição / Observações</label>
+        <textarea class="form-input" placeholder="Descreva o escopo, dependências ou critérios de aceite..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dependência de Sistema</label>
+          <input type="text" class="form-input" placeholder="Ex: CETIP, SISBACEN, ERP..." />
+        </div>
+        <div class="form-group">
+          <label>Evidência / Documento</label>
+          <input type="text" class="form-input" placeholder="Ex: Planilha_recon_mai.xlsx" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal()">Salvar Atividade</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const activities = [
+  { title: 'Atualização Carteira TVM', team: 'Ativo', resp: 'Ana Lima', respInit: 'AL', respColor: '#0ea5e9', status: 'Bloqueado', priority: 'Alta', due: '07/Mai', dueClass: 'due-overdue', progress: 0, progColor: '#ef4444' },
+  { title: 'Reconciliação Caixa e Equiv. — Disponibilidades', team: 'Ativo', resp: 'Ana Lima', respInit: 'AL', respColor: '#0ea5e9', status: 'A Fazer', priority: 'Alta', due: '09/Mai', dueClass: 'due-overdue', progress: 0, progColor: '#94a3b8' },
+  { title: 'Integração API Bacen — CADOC 60', team: 'Middle', resp: 'Beatriz Costa', respInit: 'BC', respColor: '#f59e0b', status: 'Bloqueado', priority: 'Alta', due: '08/Mai', dueClass: 'due-overdue', progress: 0, progColor: '#ef4444' },
+  { title: 'Análise Variação Investimentos (RF)', team: 'Ativo', resp: 'Ana Lima', respInit: 'AL', respColor: '#0ea5e9', status: 'Em Andamento', priority: 'Alta', due: '10/Mai', dueClass: 'due-today', progress: 65, progColor: '#3b82f6' },
+  { title: 'Nota 6 — Captações no Mercado Aberto', team: 'Passivo', resp: 'Carlos Rocha', respInit: 'CR', respColor: '#a855f7', status: 'Em Revisão', priority: 'Alta', due: '10/Mai', dueClass: 'due-today', progress: 90, progColor: '#f59e0b' },
+  { title: 'Apuração Custo de Captação (DI/IPCA/TR)', team: 'Passivo', resp: 'Carlos Rocha', respInit: 'CR', respColor: '#a855f7', status: 'Em Andamento', priority: 'Alta', due: '11/Mai', dueClass: 'due-ok', progress: 40, progColor: '#3b82f6' },
+  { title: 'Nota 4 — Operações de Crédito', team: 'Ativo', resp: 'Pedro Alves', respInit: 'PA', respColor: '#0ea5e9', status: 'Em Revisão', priority: 'Alta', due: '11/Mai', dueClass: 'due-ok', progress: 95, progColor: '#f59e0b' },
+  { title: 'Relatório Risco de Mercado (VaR)', team: 'Middle', resp: 'Beatriz Costa', respInit: 'BC', respColor: '#f59e0b', status: 'Em Revisão', priority: 'Média', due: '11/Mai', dueClass: 'due-ok', progress: 85, progColor: '#f59e0b' },
+  { title: 'Provisão Encargos CDB/LCI', team: 'Passivo', resp: 'Carlos Rocha', respInit: 'CR', respColor: '#a855f7', status: 'A Fazer', priority: 'Alta', due: '12/Mai', dueClass: 'due-ok', progress: 0, progColor: '#94a3b8' },
+  { title: 'Conciliação Carteira de Crédito (PDD)', team: 'Ativo', resp: 'Pedro Alves', respInit: 'PA', respColor: '#0ea5e9', status: 'A Fazer', priority: 'Média', due: '14/Mai', dueClass: 'due-ok', progress: 0, progColor: '#94a3b8' },
+  { title: 'Validação Posição Derivativos (MtM)', team: 'Middle', resp: 'Beatriz Costa', respInit: 'BC', respColor: '#f59e0b', status: 'A Fazer', priority: 'Média', due: '13/Mai', dueClass: 'due-ok', progress: 0, progColor: '#94a3b8' },
+  { title: 'Conciliação Passivos Previdenciários', team: 'Passivo', resp: 'Fernanda Dias', respInit: 'FD', respColor: '#a855f7', status: 'Em Andamento', priority: 'Média', due: '15/Mai', dueClass: 'due-ok', progress: 30, progColor: '#3b82f6' },
+  { title: 'Relatório de Limites Operacionais', team: 'Middle', resp: 'Beatriz Costa', respInit: 'BC', respColor: '#f59e0b', status: 'Em Andamento', priority: 'Média', due: '10/Mai', dueClass: 'due-today', progress: 80, progColor: '#3b82f6' },
+  { title: '✅ Enquadramento de Carteiras', team: 'Middle', resp: 'Beatriz Costa', respInit: 'BC', respColor: '#f59e0b', status: 'Concluído', priority: 'Média', due: '08/Mai', dueClass: 'due-ok', progress: 100, progColor: '#22c55e' },
+  { title: '✅ Reconciliação Conta 1.1.1.01', team: 'Ativo', resp: 'Ana Lima', respInit: 'AL', respColor: '#0ea5e9', status: 'Concluído', priority: 'Alta', due: '07/Mai', dueClass: 'due-ok', progress: 100, progColor: '#22c55e' },
+];
+
+const statusMap = {
+  'A Fazer': '<span class="status-pill s-todo">○ A Fazer</span>',
+  'Em Andamento': '<span class="status-pill s-prog">● Em Andamento</span>',
+  'Em Revisão': '<span class="status-pill s-rev">◐ Em Revisão</span>',
+  'Concluído': '<span class="status-pill s-done">✔ Concluído</span>',
+  'Bloqueado': '<span class="status-pill s-block">⛔ Bloqueado</span>',
+};
+const teamClass = { 'Ativo': 'tb-ativo', 'Passivo': 'tb-passivo', 'Middle': 'tb-middle' };
+const priClass = { 'Alta': 'pri-alta', 'Média': 'pri-media', 'Baixa': 'pri-baixa' };
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = data.map(a => `
+    <tr onclick="openModal()">
+      <td onclick="event.stopPropagation()"><input type="checkbox" /></td>
+      <td><strong style="font-size:12px">${a.title}</strong></td>
+      <td><span class="team-pill ${teamClass[a.team]}">${a.team}</span></td>
+      <td>
+        <div class="assignee-cell">
+          <div class="a-avatar" style="background:${a.respColor}">${a.respInit}</div>
+          <span>${a.resp}</span>
+        </div>
+      </td>
+      <td>${statusMap[a.status]}</td>
+      <td><span class="pri-pill ${priClass[a.priority]}">${a.priority}</span></td>
+      <td class="${a.dueClass}">${a.dueClass === 'due-overdue' ? '⏰ ' : ''}${a.due}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" style="width:${a.progress}%;background:${a.progColor}"></div></div>
+          <span class="prog-text">${a.progress}%</span>
+        </div>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <button class="action-btn">✏️</button>
+          <button class="action-btn">📋</button>
+          <button class="action-btn" style="color:#dc2626">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const selects = document.querySelectorAll('.filters-bar select');
+  const [equipe, status, prioridade] = [...selects].map(s => s.value);
+
+  const filtered = activities.filter(a => {
+    const matchSearch = !search || a.title.toLowerCase().includes(search) || a.resp.toLowerCase().includes(search);
+    const matchEquipe = !equipe || a.team === equipe;
+    const matchStatus = !status || a.status === status;
+    const matchPri = !prioridade || a.priority === prioridade;
+    return matchSearch && matchEquipe && matchStatus && matchPri;
+  });
+  renderTable(filtered);
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+function closeModalOutside(e) {
+  if (e.target === e.currentTarget) closeModal();
+}
+
+renderTable(activities);
+</script>
+</body>
+</html>

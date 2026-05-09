@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Controladoria — Fechamento Mensal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --white: #fff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --radius: 12px;
+    --shadow: 0 1px 4px rgba(0,0,0,.08);
+    --blue: #1d4ed8;
+    --ativo: #0ea5e9;
+    --passivo: #a855f7;
+    --middle: #f59e0b;
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    color: #fff; padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between; height: 64px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 36px; height: 36px; background: rgba(255,255,255,.15); border-radius: 10px; display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900; }
+  .logo h1 { font-size: 15px; font-weight: 700; }
+  .logo span { font-size: 11px; opacity: .7; display: block; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .hbadge { background: rgba(255,255,255,.15); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .hbadge.green { background: rgba(34,197,94,.25); color: #86efac; }
+  .hbadge.red { background: rgba(239,68,68,.25); color: #fca5a5; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.2); display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer; }
+
+  /* NAV TABS */
+  .nav-tabs { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; gap: 0; }
+  .nav-tab { padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; white-space: nowrap; }
+  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .nav-tab:hover { color: var(--blue); }
+
+  /* MAIN */
+  main { padding: 24px 28px; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .kpi-card {
+    background: var(--white); border-radius: var(--radius); padding: 18px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .kpi-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: var(--radius) 0 0 var(--radius); }
+  .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 6px; }
+  .kpi-sub { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .kpi-delta { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+  .delta-up { background: #dcfce7; color: #16a34a; }
+  .delta-down { background: #fee2e2; color: #dc2626; }
+  .delta-neutral { background: #f1f5f9; color: #64748b; }
+
+  /* GRID LAYOUT */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* CHART CARD */
+  .chart-card {
+    background: var(--white); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .chart-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .chart-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .chart-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+  .legend-dot { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* TEAM PROGRESS */
+  .team-card {
+    background: var(--white); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .team-row { margin-bottom: 16px; }
+  .team-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .team-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .team-pct { font-size: 13px; font-weight: 800; }
+  .team-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .team-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+  .team-stats { display: flex; gap: 12px; margin-top: 5px; }
+  .team-stat { font-size: 11px; color: var(--muted); }
+  .team-stat span { font-weight: 700; color: var(--text); }
+
+  /* ACTIVITY TABLE */
+  .table-card {
+    background: var(--white); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 6px 12px; border-bottom: 1.5px solid var(--border); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody td { padding: 10px 12px; font-size: 12px; vertical-align: middle; }
+  .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .s-todo { background: #f1f5f9; color: #64748b; }
+  .s-prog { background: #dbeafe; color: #1d4ed8; }
+  .s-rev { background: #fef3c7; color: #b45309; }
+  .s-done { background: #dcfce7; color: #16a34a; }
+  .s-block { background: #fee2e2; color: #dc2626; }
+  .team-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .tb-ativo { background: #e0f2fe; color: #0369a1; }
+  .tb-passivo { background: #f3e8ff; color: #7e22ce; }
+  .tb-middle { background: #fef3c7; color: #b45309; }
+  .due-overdue { color: #dc2626; font-weight: 700; }
+
+  /* SLA GAUGE */
+  .sla-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .sla-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .sla-bar-wrap { flex: 1; margin: 0 12px; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .sla-bar-fill { height: 100%; border-radius: 4px; }
+  .sla-val { font-size: 12px; font-weight: 800; min-width: 36px; text-align: right; }
+
+  /* ALERT BOX */
+  .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; }
+  .alert-red { background: #fee2e2; border-left: 3px solid #dc2626; }
+  .alert-yellow { background: #fef3c7; border-left: 3px solid #d97706; }
+  .alert-text { font-size: 12px; }
+  .alert-text strong { display: block; font-size: 12px; margin-bottom: 2px; }
+  .alert-text span { color: var(--muted); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <h1>Dashboard Controladoria</h1>
+      <span>Banco Digital S.A. — Módulo de Fechamento</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="hbadge">Fechamento Mai/2026</span>
+    <span class="hbadge green">● Cluster: Online</span>
+    <span class="hbadge red">3 Bloqueados</span>
+    <div class="avatar">WC</div>
+  </div>
+</header>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <div class="nav-tab active">Visão Geral</div>
+  <div class="nav-tab">Equipe Ativo</div>
+  <div class="nav-tab">Equipe Passivo</div>
+  <div class="nav-tab">Middle Office</div>
+  <div class="nav-tab">Calendário</div>
+  <div class="nav-tab">Relatórios</div>
+</div>
+
+<main>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#1d4ed8"></div>
+      <div class="kpi-label">Total Atividades</div>
+      <div class="kpi-value">38</div>
+      <div class="kpi-sub"><span class="kpi-delta delta-up">+4 vs abr</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#22c55e"></div>
+      <div class="kpi-label">Concluídas</div>
+      <div class="kpi-value" style="color:#16a34a">12</div>
+      <div class="kpi-sub">32% do total <span class="kpi-delta delta-neutral">Meta: 40%</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#3b82f6"></div>
+      <div class="kpi-label">Em Andamento</div>
+      <div class="kpi-value" style="color:#1d4ed8">14</div>
+      <div class="kpi-sub">37% do total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#ef4444"></div>
+      <div class="kpi-label">Bloqueadas</div>
+      <div class="kpi-value" style="color:#dc2626">3</div>
+      <div class="kpi-sub"><span class="kpi-delta delta-down">↑ +1 vs ontem</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#f59e0b"></div>
+      <div class="kpi-label">SLA Geral</div>
+      <div class="kpi-value" style="color:#d97706">84%</div>
+      <div class="kpi-sub">Meta: 95% <span class="kpi-delta delta-down">▼ Atenção</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#a855f7"></div>
+      <div class="kpi-label">Dias Fechamento</div>
+      <div class="kpi-value" style="color:#7e22ce">D+5</div>
+      <div class="kpi-sub">Prazo: D+8</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="grid-2">
+
+    <!-- Andamento por Equipe (bar) -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Andamento por Equipe</div>
+          <div class="chart-sub">Distribuição de status — Mai/2026</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-dot"><div class="dot" style="background:#94a3b8"></div>A Fazer</div>
+          <div class="legend-dot"><div class="dot" style="background:#3b82f6"></div>Andamento</div>
+          <div class="legend-dot"><div class="dot" style="background:#f59e0b"></div>Revisão</div>
+          <div class="legend-dot"><div class="dot" style="background:#22c55e"></div>Concluído</div>
+          <div class="legend-dot"><div class="dot" style="background:#ef4444"></div>Bloqueado</div>
+        </div>
+      </div>
+      <canvas id="chartEquipe" height="200"></canvas>
+    </div>
+
+    <!-- Tendência de conclusão (line) -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Velocidade de Fechamento</div>
+          <div class="chart-sub">Atividades concluídas por dia no mês</div>
+        </div>
+      </div>
+      <canvas id="chartTendencia" height="200"></canvas>
+    </div>
+
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="grid-3">
+
+    <!-- Donut -->
+    <div class="chart-card" style="display:flex;gap:24px;align-items:center">
+      <div style="flex:1;min-width:0">
+        <div class="chart-title" style="margin-bottom:4px">Distribuição por Equipe</div>
+        <div class="chart-sub" style="margin-bottom:16px">% de atividades no ciclo atual</div>
+        <canvas id="chartDonut" height="200"></canvas>
+      </div>
+      <div style="min-width:120px">
+        <div style="margin-bottom:10px"><div class="legend-dot" style="margin-bottom:4px"><div class="dot" style="background:#0ea5e9"></div><strong style="font-size:13px">Ativo</strong></div><div style="font-size:22px;font-weight:800;color:#0ea5e9;margin-left:16px">15</div></div>
+        <div style="margin-bottom:10px"><div class="legend-dot" style="margin-bottom:4px"><div class="dot" style="background:#a855f7"></div><strong style="font-size:13px">Passivo</strong></div><div style="font-size:22px;font-weight:800;color:#a855f7;margin-left:16px">13</div></div>
+        <div><div class="legend-dot" style="margin-bottom:4px"><div class="dot" style="background:#f59e0b"></div><strong style="font-size:13px">Middle</strong></div><div style="font-size:22px;font-weight:800;color:#f59e0b;margin-left:16px">10</div></div>
+      </div>
+    </div>
+
+    <!-- Team Progress -->
+    <div class="team-card">
+      <div class="chart-title" style="margin-bottom:16px">Progresso por Equipe</div>
+
+      <div class="team-row">
+        <div class="team-row-header">
+          <div class="team-name" style="color:#0369a1">🔵 Ativo</div>
+          <div class="team-pct" style="color:#0ea5e9">47%</div>
+        </div>
+        <div class="team-bar"><div class="team-bar-fill" style="width:47%;background:#0ea5e9"></div></div>
+        <div class="team-stats">
+          <div class="team-stat">Feitas: <span>7</span></div>
+          <div class="team-stat">Em curso: <span>5</span></div>
+          <div class="team-stat">Bloqueadas: <span style="color:#dc2626">2</span></div>
+        </div>
+      </div>
+
+      <div class="team-row">
+        <div class="team-row-header">
+          <div class="team-name" style="color:#7e22ce">🟣 Passivo</div>
+          <div class="team-pct" style="color:#a855f7">38%</div>
+        </div>
+        <div class="team-bar"><div class="team-bar-fill" style="width:38%;background:#a855f7"></div></div>
+        <div class="team-stats">
+          <div class="team-stat">Feitas: <span>5</span></div>
+          <div class="team-stat">Em curso: <span>6</span></div>
+          <div class="team-stat">Bloqueadas: <span>0</span></div>
+        </div>
+      </div>
+
+      <div class="team-row" style="margin-bottom:0">
+        <div class="team-row-header">
+          <div class="team-name" style="color:#b45309">🟡 Middle</div>
+          <div class="team-pct" style="color:#f59e0b">50%</div>
+        </div>
+        <div class="team-bar"><div class="team-bar-fill" style="width:50%;background:#f59e0b"></div></div>
+        <div class="team-stats">
+          <div class="team-stat">Feitas: <span>5</span></div>
+          <div class="team-stat">Em curso: <span>3</span></div>
+          <div class="team-stat">Bloqueadas: <span style="color:#dc2626">1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLA & Alertas -->
+    <div class="team-card">
+      <div class="chart-title" style="margin-bottom:16px">SLA por Equipe</div>
+
+      <div class="sla-row">
+        <div class="sla-label">🔵 Ativo</div>
+        <div class="sla-bar-wrap"><div class="sla-bar-fill" style="width:80%;background:#0ea5e9"></div></div>
+        <div class="sla-val" style="color:#0ea5e9">80%</div>
+      </div>
+      <div class="sla-row">
+        <div class="sla-label">🟣 Passivo</div>
+        <div class="sla-bar-wrap"><div class="sla-bar-fill" style="width:92%;background:#a855f7"></div></div>
+        <div class="sla-val" style="color:#a855f7">92%</div>
+      </div>
+      <div class="sla-row" style="margin-bottom:20px">
+        <div class="sla-label">🟡 Middle</div>
+        <div class="sla-bar-wrap"><div class="sla-bar-fill" style="width:75%;background:#f59e0b"></div></div>
+        <div class="sla-val" style="color:#d97706">75%</div>
+      </div>
+
+      <div class="chart-title" style="margin-bottom:10px">⚠️ Alertas Ativos</div>
+      <div class="alert alert-red">
+        <div style="font-size:18px">⛔</div>
+        <div class="alert-text">
+          <strong>Atualização TVM bloqueada</strong>
+          <span>Aguardando arquivo CETIP/B3 D-0 desde ontem</span>
+        </div>
+      </div>
+      <div class="alert alert-yellow">
+        <div style="font-size:18px">⚠️</div>
+        <div class="alert-text">
+          <strong>SLA Middle abaixo da meta</strong>
+          <span>75% — meta é 95%. 2 entregas atrasadas.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="chart-header" style="margin-bottom:14px">
+      <div>
+        <div class="chart-title">Atividades Críticas — Monitoramento</div>
+        <div class="chart-sub">Alta prioridade ou atrasadas no ciclo atual</div>
+      </div>
+      <button style="padding:7px 14px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;background:#fff;cursor:pointer">Ver todas →</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Atividade</th>
+          <th>Equipe</th>
+          <th>Responsável</th>
+          <th>Status</th>
+          <th>Vencimento</th>
+          <th>Prioridade</th>
+          <th>Progresso</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Atualização Carteira TVM</strong></td>
+          <td><span class="team-badge tb-ativo">Ativo</span></td>
+          <td>Ana Lima</td>
+          <td><span class="status-pill s-block">⛔ Bloqueado</span></td>
+          <td class="due-overdue">⏰ Atrasado</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#fee2e2;border-radius:3px"><div style="width:0%;height:100%;background:#ef4444;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Reconciliação Caixa e Equiv.</strong></td>
+          <td><span class="team-badge tb-ativo">Ativo</span></td>
+          <td>Ana Lima</td>
+          <td><span class="status-pill s-todo">○ A Fazer</span></td>
+          <td class="due-overdue">⏰ 09/Mai</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px"><div style="width:0%;height:100%;background:#94a3b8;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Integração API Bacen (CADOC)</strong></td>
+          <td><span class="team-badge tb-middle">Middle</span></td>
+          <td>Beatriz Costa</td>
+          <td><span class="status-pill s-block">⛔ Bloqueado</span></td>
+          <td class="due-overdue">⏰ Atrasado</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#fee2e2;border-radius:3px"><div style="width:0%;height:100%;background:#ef4444;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Nota 6 — Captações no Mercado</strong></td>
+          <td><span class="team-badge tb-passivo">Passivo</span></td>
+          <td>Carlos Rocha</td>
+          <td><span class="status-pill s-rev">◐ Em Revisão</span></td>
+          <td>10/Mai</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px"><div style="width:90%;height:100%;background:#f59e0b;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Análise Variação Investimentos</strong></td>
+          <td><span class="team-badge tb-ativo">Ativo</span></td>
+          <td>Ana Lima</td>
+          <td><span class="status-pill s-prog">● Em Andamento</span></td>
+          <td>10/Mai</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px"><div style="width:65%;height:100%;background:#3b82f6;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Provisão Encargos CDB/LCI</strong></td>
+          <td><span class="team-badge tb-passivo">Passivo</span></td>
+          <td>Carlos Rocha</td>
+          <td><span class="status-pill s-todo">○ A Fazer</span></td>
+          <td>12/Mai</td>
+          <td><span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Alta</span></td>
+          <td><div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px"><div style="width:0%;height:100%;background:#94a3b8;border-radius:3px"></div></div></td>
+        </tr>
+        <tr>
+          <td><strong>✅ Enquadramento de Carteiras</strong></td>
+          <td><span class="team-badge tb-middle">Middle</span></td>
+          <td>Beatriz Costa</td>
+          <td><span class="status-pill s-done">✔ Concluído</span></td>
+          <td style="color:#16a34a">✔ 08/Mai</td>
+          <td><span style="background:#fef3c7;color:#d97706;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">Média</span></td>
+          <td><div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px"><div style="width:100%;height:100%;background:#22c55e;border-radius:3px"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+// --- Bar Chart: Andamento por Equipe ---
+new Chart(document.getElementById('chartEquipe'), {
+  type: 'bar',
+  data: {
+    labels: ['Ativo', 'Passivo', 'Middle'],
+    datasets: [
+      { label: 'A Fazer',     data: [4, 5, 2], backgroundColor: '#94a3b8' },
+      { label: 'Em Andamento',data: [5, 6, 3], backgroundColor: '#3b82f6' },
+      { label: 'Em Revisão',  data: [2, 1, 3], backgroundColor: '#f59e0b' },
+      { label: 'Concluído',   data: [7, 5, 5], backgroundColor: '#22c55e' },
+      { label: 'Bloqueado',   data: [2, 0, 1], backgroundColor: '#ef4444' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 2 } }
+    }
+  }
+});
+
+// --- Line Chart: Velocidade ---
+new Chart(document.getElementById('chartTendencia'), {
+  type: 'line',
+  data: {
+    labels: ['D+1','D+2','D+3','D+4','D+5','D+6','D+7','D+8'],
+    datasets: [
+      {
+        label: 'Concluídas (Real)',
+        data: [1, 3, 5, 7, 12, null, null, null],
+        borderColor: '#1d4ed8', backgroundColor: 'rgba(29,78,216,.1)',
+        tension: .4, fill: true, pointRadius: 4
+      },
+      {
+        label: 'Meta',
+        data: [2, 5, 8, 12, 16, 22, 28, 38],
+        borderColor: '#22c55e', borderDash: [5,5],
+        tension: .4, fill: false, pointRadius: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#f1f5f9' } }
+    }
+  }
+});
+
+// --- Donut Chart ---
+new Chart(document.getElementById('chartDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Ativo', 'Passivo', 'Middle'],
+    datasets: [{
+      data: [15, 13, 10],
+      backgroundColor: ['#0ea5e9', '#a855f7', '#f59e0b'],
+      borderWidth: 2, borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    cutout: '65%',
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+</body>
+</html>

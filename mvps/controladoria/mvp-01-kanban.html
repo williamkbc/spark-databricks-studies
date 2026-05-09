@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esteira de Atividades — Controladoria</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --ativo: #0ea5e9;
+    --ativo-light: #e0f2fe;
+    --passivo: #a855f7;
+    --passivo-light: #f3e8ff;
+    --middle: #f59e0b;
+    --middle-light: #fef3c7;
+    --todo: #94a3b8;
+    --progress: #3b82f6;
+    --review: #f59e0b;
+    --done: #22c55e;
+    --blocked: #ef4444;
+    --shadow: 0 1px 3px rgba(0,0,0,.1);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px; position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg,#1e40af,#3b82f6); border-radius: 8px; display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .badge-period { background: #eff6ff; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#1e40af,#6366f1); color:#fff; display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer; }
+  .btn { padding: 7px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: #1d4ed8; color: #fff; }
+  .btn-primary:hover { background: #1e40af; }
+
+  /* FILTERS */
+  .toolbar { padding: 14px 24px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-right: 4px; }
+  .chip { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; color: var(--muted); }
+  .chip.active { border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8; }
+  .chip.team-ativo.active { border-color: var(--ativo); background: var(--ativo-light); color: #0369a1; }
+  .chip.team-passivo.active { border-color: var(--passivo); background: var(--passivo-light); color: #7e22ce; }
+  .chip.team-middle.active { border-color: var(--middle); background: var(--middle-light); color: #b45309; }
+  .search-box { margin-left: auto; padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; width: 200px; outline: none; }
+  .search-box:focus { border-color: #1d4ed8; }
+
+  /* BOARD */
+  .board { display: flex; gap: 16px; padding: 20px 24px; overflow-x: auto; min-height: calc(100vh - 140px); align-items: flex-start; }
+  .column { flex: 0 0 280px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .col-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .col-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; }
+  .col-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-todo { background: var(--todo); }
+  .dot-progress { background: var(--progress); }
+  .dot-review { background: var(--review); }
+  .dot-done { background: var(--done); }
+  .dot-blocked { background: var(--blocked); }
+  .col-count { background: var(--bg); color: var(--muted); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: grab;
+    transition: transform .15s, box-shadow .15s;
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .card:active { cursor: grabbing; }
+  .card-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .tag-ativo { background: var(--ativo-light); color: #0369a1; }
+  .tag-passivo { background: var(--passivo-light); color: #7e22ce; }
+  .tag-middle { background: var(--middle-light); color: #b45309; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .card-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .card-priority { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .pri-alta { background: #fee2e2; color: #dc2626; }
+  .pri-media { background: #fef3c7; color: #d97706; }
+  .pri-baixa { background: #dcfce7; color: #16a34a; }
+  .card-due { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .card-due.overdue { color: #dc2626; font-weight: 600; }
+  .card-assignee { width: 24px; height: 24px; border-radius: 50%; font-size: 10px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .progress-bar { height: 3px; background: var(--bg); border-radius: 3px; margin: 8px 0 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--progress); }
+  .card-icons { display: flex; gap: 8px; font-size: 11px; color: var(--muted); }
+
+  /* BLOCKED card highlight */
+  .card.blocked-card { border-left: 3px solid var(--blocked); }
+  .blocked-banner { background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 4px; }
+
+  /* DRAG highlight */
+  .cards.drag-over { background: #eff6ff; border-radius: 8px; }
+
+  /* LEGEND */
+  .legend { display: flex; align-items: center; gap: 16px; padding: 0 24px 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+
+  /* METRICS BAR */
+  .metrics-bar {
+    display: flex; gap: 12px; padding: 14px 24px;
+    background: linear-gradient(90deg,#1e3a8a,#1d4ed8);
+    color: #fff; flex-wrap: wrap;
+  }
+  .metric { flex: 1; min-width: 100px; text-align: center; }
+  .metric-val { font-size: 22px; font-weight: 800; }
+  .metric-label { font-size: 10px; opacity: .8; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+  @media (max-width: 600px) { .board { padding: 12px; } .column { flex: 0 0 240px; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <span>Esteira Controladoria</span>
+  </div>
+  <div class="header-right">
+    <span class="badge-period">📅 Fechamento Mai/2026</span>
+    <button class="btn btn-primary">+ Nova Atividade</button>
+    <div class="avatar" title="William Cardoso">WC</div>
+  </div>
+</header>
+
+<!-- METRICS BAR -->
+<div class="metrics-bar">
+  <div class="metric"><div class="metric-val">38</div><div class="metric-label">Total Atividades</div></div>
+  <div class="metric"><div class="metric-val">14</div><div class="metric-label">Em Andamento</div></div>
+  <div class="metric"><div class="metric-val">9</div><div class="metric-label">Em Revisão</div></div>
+  <div class="metric"><div class="metric-val">12</div><div class="metric-label">Concluídas</div></div>
+  <div class="metric" style="color:#fca5a5"><div class="metric-val">3</div><div class="metric-label">Bloqueadas</div></div>
+  <div class="metric"><div class="metric-val">84%</div><div class="metric-label">SLA no Prazo</div></div>
+</div>
+
+<!-- TOOLBAR / FILTERS -->
+<div class="toolbar">
+  <span class="filter-label">EQUIPE</span>
+  <div class="chip team-ativo active" onclick="toggleChip(this)">🔵 Ativo</div>
+  <div class="chip team-passivo active" onclick="toggleChip(this)">🟣 Passivo</div>
+  <div class="chip team-middle active" onclick="toggleChip(this)">🟡 Middle</div>
+  <span class="filter-label" style="margin-left:8px">PRIORIDADE</span>
+  <div class="chip active" onclick="toggleChip(this)">Alta</div>
+  <div class="chip active" onclick="toggleChip(this)">Média</div>
+  <div class="chip active" onclick="toggleChip(this)">Baixa</div>
+  <input class="search-box" placeholder="🔍  Buscar atividade..." />
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><span style="width:10px;height:10px;background:var(--todo);border-radius:50%;display:inline-block"></span>A Fazer</div>
+  <div class="legend-item"><span style="width:10px;height:10px;background:var(--progress);border-radius:50%;display:inline-block"></span>Em Andamento</div>
+  <div class="legend-item"><span style="width:10px;height:10px;background:var(--review);border-radius:50%;display:inline-block"></span>Em Revisão</div>
+  <div class="legend-item"><span style="width:10px;height:10px;background:var(--done);border-radius:50%;display:inline-block"></span>Concluído</div>
+  <div class="legend-item"><span style="width:10px;height:10px;background:var(--blocked);border-radius:50%;display:inline-block"></span>Bloqueado</div>
+</div>
+
+<!-- BOARD -->
+<div class="board" id="board">
+
+  <!-- COLUNA: A FAZER -->
+  <div class="column">
+    <div class="col-header">
+      <div class="col-title"><span class="col-dot dot-todo"></span>A Fazer</div>
+      <span class="col-count">7</span>
+    </div>
+    <div class="cards" ondragover="onDragOver(event)" ondrop="onDrop(event,this)">
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">Reconciliação Caixa e Equiv.</div>
+        <div class="card-meta">Conferência saldos BC ↔ Livro contábil</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Ana Lima">AL</div>
+          <span class="card-due overdue">⏰ Vence 09/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-passivo">🟣 Passivo</span>
+        <div class="card-title">Provisão Encargos CDB/LCI</div>
+        <div class="card-meta">Cálculo e lançamento provisões mensais</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#a855f7" title="Carlos Rocha">CR</div>
+          <span class="card-due">📅 12/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-middle">🟡 Middle</span>
+        <div class="card-title">Validação Posição Derivativos</div>
+        <div class="card-meta">Conferência marcação a mercado</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#f59e0b" title="Beatriz Costa">BC</div>
+          <span class="card-due">📅 13/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">Conciliação Carteira de Crédito</div>
+        <div class="card-meta">PDD, baixas e operações em D-1</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Pedro Alves">PA</div>
+          <span class="card-due">📅 14/Mai</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COLUNA: EM ANDAMENTO -->
+  <div class="column">
+    <div class="col-header">
+      <div class="col-title"><span class="col-dot dot-progress"></span>Em Andamento</div>
+      <span class="col-count">8</span>
+    </div>
+    <div class="cards" ondragover="onDragOver(event)" ondrop="onDrop(event,this)">
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">Análise Variação Investimentos</div>
+        <div class="card-meta">Renda fixa — ∆ vs mês anterior</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Ana Lima">AL</div>
+          <span class="card-due">📅 10/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-passivo">🟣 Passivo</span>
+        <div class="card-title">Apuração Custo de Captação</div>
+        <div class="card-meta">DI, IPCA, TR — funding do mês</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#a855f7" title="Carlos Rocha">CR</div>
+          <span class="card-due">📅 11/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-middle">🟡 Middle</span>
+        <div class="card-title">Relatório de Limites Operacionais</div>
+        <div class="card-meta">Enquadramento vs política interna</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#f59e0b" title="Beatriz Costa">BC</div>
+          <span class="card-due">📅 10/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-passivo">🟣 Passivo</span>
+        <div class="card-title">Conciliação Passivos Previdenciários</div>
+        <div class="card-meta">PGBL/VGBL — provisões técnicas</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#a855f7" title="Fernanda Dias">FD</div>
+          <span class="card-due">📅 15/Mai</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COLUNA: BLOQUEADO -->
+  <div class="column">
+    <div class="col-header">
+      <div class="col-title"><span class="col-dot dot-blocked"></span>Bloqueado</div>
+      <span class="col-count" style="background:#fee2e2;color:#dc2626">3</span>
+    </div>
+    <div class="cards" ondragover="onDragOver(event)" ondrop="onDrop(event,this)">
+
+      <div class="card blocked-card" draggable="true" ondragstart="onDragStart(event)">
+        <div class="blocked-banner">⛔ Aguardando sistema legado</div>
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">Atualização Carteira TVM</div>
+        <div class="card-meta">Dependência: arquivo CETIP/B3 D-0</div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Ana Lima">AL</div>
+          <span class="card-due overdue">⏰ Atrasado</span>
+        </div>
+      </div>
+
+      <div class="card blocked-card" draggable="true" ondragstart="onDragStart(event)">
+        <div class="blocked-banner">⛔ Aguardando aprovação TI</div>
+        <span class="card-tag tag-middle">🟡 Middle</span>
+        <div class="card-title">Integração API Bacen</div>
+        <div class="card-meta">CADOC 60 — remessa automática</div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#f59e0b" title="Beatriz Costa">BC</div>
+          <span class="card-due overdue">⏰ Atrasado</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COLUNA: EM REVISÃO -->
+  <div class="column">
+    <div class="col-header">
+      <div class="col-title"><span class="col-dot dot-review"></span>Em Revisão</div>
+      <span class="col-count">6</span>
+    </div>
+    <div class="cards" ondragover="onDragOver(event)" ondrop="onDrop(event,this)">
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-passivo">🟣 Passivo</span>
+        <div class="card-title">Nota 6 — Captações no Mercado</div>
+        <div class="card-meta">Revisão gerente — nota explicativa</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:90%;background:#f59e0b"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#a855f7" title="Carlos Rocha">CR</div>
+          <span class="card-due">📅 10/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-middle">🟡 Middle</span>
+        <div class="card-title">Relatório Risco de Mercado</div>
+        <div class="card-meta">VaR, stress test — revisão Gerência</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:85%;background:#f59e0b"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#f59e0b" title="Beatriz Costa">BC</div>
+          <span class="card-due">📅 11/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)">
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">Nota 4 — Operações de Crédito</div>
+        <div class="card-meta">Revisão final nota DFP</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:95%;background:#f59e0b"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Pedro Alves">PA</div>
+          <span class="card-due">📅 11/Mai</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COLUNA: CONCLUÍDO -->
+  <div class="column">
+    <div class="col-header">
+      <div class="col-title"><span class="col-dot dot-done"></span>Concluído</div>
+      <span class="col-count" style="background:#dcfce7;color:#16a34a">12</span>
+    </div>
+    <div class="cards" ondragover="onDragOver(event)" ondrop="onDrop(event,this)">
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)" style="opacity:.75">
+        <span class="card-tag tag-middle">🟡 Middle</span>
+        <div class="card-title">✅ Enquadramento de Carteiras</div>
+        <div class="card-meta">Política de investimentos — OK</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#22c55e"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#f59e0b" title="Beatriz Costa">BC</div>
+          <span class="card-due" style="color:#16a34a">✔ 08/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)" style="opacity:.75">
+        <span class="card-tag tag-ativo">🔵 Ativo</span>
+        <div class="card-title">✅ Reconciliação Conta 1.1.1.01</div>
+        <div class="card-meta">Disponibilidades — concluído</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#22c55e"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-alta">Alta</span>
+          <div class="card-assignee" style="background:#0ea5e9" title="Ana Lima">AL</div>
+          <span class="card-due" style="color:#16a34a">✔ 07/Mai</span>
+        </div>
+      </div>
+
+      <div class="card" draggable="true" ondragstart="onDragStart(event)" style="opacity:.75">
+        <span class="card-tag tag-passivo">🟣 Passivo</span>
+        <div class="card-title">✅ Lançamentos Amortização</div>
+        <div class="card-meta">Dívida subordinada — amort. mensal</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#22c55e"></div></div>
+        <div class="card-footer">
+          <span class="card-priority pri-media">Média</span>
+          <div class="card-assignee" style="background:#a855f7" title="Fernanda Dias">FD</div>
+          <span class="card-due" style="color:#16a34a">✔ 07/Mai</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let dragged = null;
+
+  function onDragStart(e) {
+    dragged = e.currentTarget;
+    e.currentTarget.style.opacity = '0.5';
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+
+  function onDrop(e, col) {
+    e.preventDefault();
+    col.classList.remove('drag-over');
+    if (dragged && col !== dragged.parentNode) {
+      col.appendChild(dragged);
+      dragged.style.opacity = '1';
+      updateCounts();
+    }
+  }
+
+  document.addEventListener('dragend', e => {
+    e.target.style.opacity = '1';
+    document.querySelectorAll('.cards').forEach(c => c.classList.remove('drag-over'));
+  });
+
+  function updateCounts() {
+    document.querySelectorAll('.column').forEach(col => {
+      const count = col.querySelectorAll('.card').length;
+      col.querySelector('.col-count').textContent = count;
+    });
+  }
+
+  function toggleChip(el) {
+    el.classList.toggle('active');
+  }
+</script>
+</body>
+</html>
